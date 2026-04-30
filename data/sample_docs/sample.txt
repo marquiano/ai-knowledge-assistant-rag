@@ -1,0 +1,6 @@
+This is a sample document for the AI Knowledge Assistant.
+
+The system is designed to ingest documents, split them into semantic chunks,
+store vector embeddings, retrieve relevant context, and generate answers using an LLM.
+
+This project demonstrates Retrieval-Augmented Generation, also known as RAG.
