@@ -1,0 +1,3 @@
+Este documento fala sobre inteligência artificial.
+RAG é uma técnica que combina busca de informações com geração de respostas.
+Esse sistema permite consultar documentos de forma inteligente.
