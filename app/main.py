@@ -2,9 +2,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 
+from app.auth import verify_api_key
 from app.database import Base, engine
 from app.history_repository import get_history
 from app.rag_pipeline import RAGPipeline
@@ -30,7 +31,7 @@ def health_check():
 
 
 @app.get("/history")
-def history():
+def history(_: bool = Depends(verify_api_key)):
     records = get_history()
 
     return [
@@ -47,7 +48,10 @@ def history():
 
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    _: bool = Depends(verify_api_key)
+):
     if not file.filename.lower().endswith((".txt", ".pdf")):
         raise HTTPException(
             status_code=400,
@@ -68,7 +72,10 @@ async def upload_document(file: UploadFile = File(...)):
 
 
 @app.post("/ask")
-def ask_question(request: QuestionRequest):
+def ask_question(
+    request: QuestionRequest,
+    _: bool = Depends(verify_api_key)
+):
     if not request.question.strip():
         raise HTTPException(
             status_code=400,
