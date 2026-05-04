@@ -9,3 +9,5 @@ langchain-chroma==0.1.4
 langchain-text-splitters==0.3.0
 chromadb==0.5.3
 pypdf==4.3.1
+psycopg2-binary==2.9.11
+sqlalchemy==2.0.49

@@ -1,10 +1,13 @@
 from pathlib import Path
 from typing import Dict, Any
+
+from app.history_repository import save_query
 from app.loader import load_documents
 from app.embeddings import get_embedding_model
 from app.llm import get_llm
 from app.retriever import build_vector_store, load_vector_store
 from app.utils import estimate_openai_cost
+
 
 class RAGPipeline:
     def __init__(self, data_dir: Path):
@@ -15,10 +18,14 @@ class RAGPipeline:
 
     def index_documents(self) -> Dict[str, Any]:
         docs = load_documents(self.data_dir)
-        if not docs:
-            return {"indexed_documents": 0, "message": "No documents found."}
 
-        vector_store = build_vector_store(
+        if not docs:
+            return {
+                "indexed_documents": 0,
+                "message": "No documents found."
+            }
+
+        build_vector_store(
             documents=docs,
             embedding_model=self.embedding_model,
             persist_dir=self.persist_dir
@@ -40,10 +47,21 @@ class RAGPipeline:
         retrieved_docs = retriever.invoke(question)
 
         if not retrieved_docs:
+            answer_text = "I could not find enough context in the indexed documents."
+            sources = []
+            estimated_cost = 0
+
+            save_query(
+                question=question,
+                answer=answer_text,
+                sources=sources,
+                cost=estimated_cost
+            )
+
             return {
-                "answer": "I could not find enough context in the indexed documents.",
-                "sources": [],
-                "estimated_cost_usd": 0
+                "answer": answer_text,
+                "sources": sources,
+                "estimated_cost_usd": estimated_cost
             }
 
         context = "\n\n".join([doc.page_content for doc in retrieved_docs])
@@ -69,8 +87,17 @@ Question:
             for doc in retrieved_docs
         })
 
+        estimated_cost = estimate_openai_cost(prompt, answer_text)
+
+        save_query(
+            question=question,
+            answer=answer_text,
+            sources=sources,
+            cost=estimated_cost
+        )
+
         return {
             "answer": answer_text,
             "sources": sources,
-            "estimated_cost_usd": estimate_openai_cost(prompt, answer_text)
+            "estimated_cost_usd": estimated_cost
         }
