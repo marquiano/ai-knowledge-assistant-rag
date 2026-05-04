@@ -41,6 +41,7 @@ class RAGPipeline:
 
     def answer(self, question: str, user_id: str = "default_user") -> Dict[str, Any]:
         memory_context = "\n".join(get_context(user_id))
+        intent_data = classify_intent(question)
 
         vector_store = load_vector_store(
             embedding_model=self.embedding_model,
@@ -67,19 +68,18 @@ class RAGPipeline:
             return {
                 "answer": answer_text,
                 "sources": sources,
-                "estimated_cost_usd": estimated_cost
+                "estimated_cost_usd": estimated_cost,
+                "intent": intent_data
             }
 
         context = "\n\n".join([doc.page_content for doc in retrieved_docs])
-
-	intent_data = classify_intent(question)
 
         prompt = f"""
 You are an AI assistant.
 
 Use the conversation history only when it helps clarify references such as "it", "that", "the previous answer", or follow-up questions.
 
-Intent:
+Intent classification:
 {intent_data}
 
 Conversation history:
@@ -111,9 +111,9 @@ Question:
 
         save_context(user_id, question, answer_text)
 
-	return {
-	    "answer": answer_text,
-	    "sources": sources,
-	    "estimated_cost_usd": estimated_cost,
-	    "intent": intent_data
-	}
+        return {
+            "answer": answer_text,
+            "sources": sources,
+            "estimated_cost_usd": estimated_cost,
+            "intent": intent_data
+        }

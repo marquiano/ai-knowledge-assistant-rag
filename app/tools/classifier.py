@@ -1,15 +1,20 @@
 def classify_intent(text: str) -> dict:
-    text = text.lower()
+    normalized_text = text.lower()
 
-    if any(word in text for word in ["urgent", "now", "immediately"]):
-        priority = "high"
-    else:
-        priority = "normal"
+    high_priority_words = [
+        "urgent", "urgente", "immediately", "imediatamente",
+        "critical", "crítico", "down", "fora do ar",
+        "error", "erro", "failure", "falha"
+    ]
 
-    if any(word in text for word in ["create", "send", "execute"]):
-        intent = "action"
-    else:
-        intent = "information"
+    action_words = [
+        "create", "crie", "send", "envie", "execute",
+        "run", "rode", "notify", "notifique",
+        "open", "abra", "call", "chame"
+    ]
+
+    priority = "high" if any(word in normalized_text for word in high_priority_words) else "normal"
+    intent = "action" if any(word in normalized_text for word in action_words) else "information"
 
     return {
         "intent": intent,
