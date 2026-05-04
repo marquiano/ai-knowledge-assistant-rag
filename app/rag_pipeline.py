@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any
 
+from app.memory import get_context, save_context
 from app.history_repository import save_query
 from app.loader import load_documents
 from app.embeddings import get_embedding_model
@@ -38,6 +39,9 @@ class RAGPipeline:
         }
 
     def answer(self, question: str) -> Dict[str, Any]:
+        user_id = "default_user"
+        memory_context = "\n".join(get_context(user_id))
+
         vector_store = load_vector_store(
             embedding_model=self.embedding_model,
             persist_dir=self.persist_dir
@@ -58,6 +62,8 @@ class RAGPipeline:
                 cost=estimated_cost
             )
 
+            save_context(user_id, question, answer_text)
+
             return {
                 "answer": answer_text,
                 "sources": sources,
@@ -67,12 +73,14 @@ class RAGPipeline:
         context = "\n\n".join([doc.page_content for doc in retrieved_docs])
 
         prompt = f"""
-You are an AI knowledge assistant.
+You are an AI assistant.
 
-Answer the user's question using only the context below.
-If the answer is not present in the context, say that the information was not found.
+Use the conversation history only when it helps clarify references such as "it", "that", "the previous answer", or follow-up questions.
 
-Context:
+Conversation history:
+{memory_context}
+
+Document context:
 {context}
 
 Question:
@@ -95,6 +103,8 @@ Question:
             sources=sources,
             cost=estimated_cost
         )
+
+        save_context(user_id, question, answer_text)
 
         return {
             "answer": answer_text,
