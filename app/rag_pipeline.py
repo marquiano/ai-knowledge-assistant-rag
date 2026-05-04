@@ -38,8 +38,7 @@ class RAGPipeline:
             "status": "success"
         }
 
-    def answer(self, question: str) -> Dict[str, Any]:
-        user_id = "default_user"
+    def answer(self, question: str, user_id: str = "default_user") -> Dict[str, Any]:
         memory_context = "\n".join(get_context(user_id))
 
         vector_store = load_vector_store(

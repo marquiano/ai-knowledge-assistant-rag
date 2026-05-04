@@ -24,6 +24,7 @@ rag = RAGPipeline(data_dir=DATA_DIR)
 
 class QuestionRequest(BaseModel):
     question: str
+    user_id: str = "default_user"
 
 
 @app.get("/")
@@ -47,11 +48,11 @@ def history(_: bool = Depends(verify_api_key)):
         for r in records
     ]
 
-@app.get("/memory")
-def memory(_: bool = Depends(verify_api_key)):
+@app.get("/memory/{user_id}")
+def memory(user_id: str, _: bool = Depends(verify_api_key)):
     return {
-        "user_id": "default_user",
-        "memory": get_memory("default_user")
+        "user_id": user_id,
+        "memory": get_memory(user_id)
     }
 
 @app.post("/upload")
@@ -89,4 +90,7 @@ def ask_question(
             detail="Question cannot be empty."
         )
 
-    return rag.answer(request.question)
+    return rag.answer(
+    question=request.question,
+    user_id=request.user_id
+)
