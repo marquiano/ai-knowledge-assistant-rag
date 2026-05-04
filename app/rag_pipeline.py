@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any
 
+from app.tools.n8n_webhook import send_n8n_alert
 from app.tools.classifier import classify_intent
 from app.memory import get_context, save_context
 from app.history_repository import save_query
@@ -39,6 +40,27 @@ class RAGPipeline:
             "status": "success"
         }
 
+    def _send_alert_if_needed(
+        self,
+        user_id: str,
+        question: str,
+        answer_text: str,
+        sources: list,
+        estimated_cost: float,
+        intent_data: dict
+    ) -> dict | None:
+        if intent_data.get("priority") != "high":
+            return None
+
+        return send_n8n_alert({
+            "user_id": user_id,
+            "question": question,
+            "answer": answer_text,
+            "sources": sources,
+            "estimated_cost_usd": estimated_cost,
+            "intent": intent_data
+        })
+
     def answer(self, question: str, user_id: str = "default_user") -> Dict[str, Any]:
         memory_context = "\n".join(get_context(user_id))
         intent_data = classify_intent(question)
@@ -65,11 +87,21 @@ class RAGPipeline:
 
             save_context(user_id, question, answer_text)
 
+            n8n_alert = self._send_alert_if_needed(
+                user_id=user_id,
+                question=question,
+                answer_text=answer_text,
+                sources=sources,
+                estimated_cost=estimated_cost,
+                intent_data=intent_data
+            )
+
             return {
                 "answer": answer_text,
                 "sources": sources,
                 "estimated_cost_usd": estimated_cost,
-                "intent": intent_data
+                "intent": intent_data,
+                "n8n_alert": n8n_alert
             }
 
         context = "\n\n".join([doc.page_content for doc in retrieved_docs])
@@ -111,9 +143,19 @@ Question:
 
         save_context(user_id, question, answer_text)
 
+        n8n_alert = self._send_alert_if_needed(
+            user_id=user_id,
+            question=question,
+            answer_text=answer_text,
+            sources=sources,
+            estimated_cost=estimated_cost,
+            intent_data=intent_data
+        )
+
         return {
             "answer": answer_text,
             "sources": sources,
             "estimated_cost_usd": estimated_cost,
-            "intent": intent_data
+            "intent": intent_data,
+            "n8n_alert": n8n_alert
         }
