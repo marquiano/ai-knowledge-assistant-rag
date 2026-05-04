@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any
 
+from app.tools.classifier import classify_intent
 from app.memory import get_context, save_context
 from app.history_repository import save_query
 from app.loader import load_documents
@@ -71,10 +72,15 @@ class RAGPipeline:
 
         context = "\n\n".join([doc.page_content for doc in retrieved_docs])
 
+	intent_data = classify_intent(question)
+
         prompt = f"""
 You are an AI assistant.
 
 Use the conversation history only when it helps clarify references such as "it", "that", "the previous answer", or follow-up questions.
+
+Intent:
+{intent_data}
 
 Conversation history:
 {memory_context}
@@ -105,8 +111,9 @@ Question:
 
         save_context(user_id, question, answer_text)
 
-        return {
-            "answer": answer_text,
-            "sources": sources,
-            "estimated_cost_usd": estimated_cost
-        }
+	return {
+	    "answer": answer_text,
+	    "sources": sources,
+	    "estimated_cost_usd": estimated_cost,
+	    "intent": intent_data
+	}
