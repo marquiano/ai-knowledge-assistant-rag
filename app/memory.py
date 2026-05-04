@@ -19,9 +19,13 @@ def save_context(user_id: str, question: str, answer: str):
         f"Q: {question}\nA: {answer}"
     )
 
-    redis_client.ltrim(key, 0, 4)  # mantém últimos 5
+    redis_client.ltrim(key, 0, 4)
+
+
+def get_context(user_id: str = "default_user"):
+    key = f"context:{user_id}"
+    return redis_client.lrange(key, 0, 4)
 
 
 def get_memory(user_id: str = "default_user"):
-    key = f"context:{user_id}"
-    return redis_client.lrange(key, 0, 4)
+    return get_context(user_id)
