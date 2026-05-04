@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+from app.memory import get_memory
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
@@ -46,6 +47,12 @@ def history(_: bool = Depends(verify_api_key)):
         for r in records
     ]
 
+@app.get("/memory")
+def memory(_: bool = Depends(verify_api_key)):
+    return {
+        "user_id": "default_user",
+        "memory": get_memory("default_user")
+    }
 
 @app.post("/upload")
 async def upload_document(
